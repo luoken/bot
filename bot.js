@@ -8,8 +8,6 @@ var request = require('request');
 var connector = new builder.ConsoleConnector().listen();
 var bot = new builder.UniversalBot(connector);
 
-//var dialog = new builder.DialogAction(connector);
-
 bot.dialog('/', [
     function(session){
 	session.beginDialog('/intro');
@@ -19,6 +17,7 @@ bot.dialog('/', [
     },
     function(session, results){
 	session.userData.answer = results.response;
+	console.log(session.userData.answer);
 	if(session.userData.answer == 'sure' || 'yes'){
     	    session.beginDialog('/give choices');
     	}
@@ -28,14 +27,33 @@ bot.dialog('/', [
     },
     function(session, results){
 	session.userData.choice = results.response.entity;
-	if(session.userData.choice.toLowerCase == 'tell me the weather!' || 'weather'){
-	    session.beginDialog('/getWeather');
+	console.log(session.userData.choice);
+	if(results.response){
+	    if(session.userData.choice === 'tell me the weather!' || 'weather'){
+		session.beginDialog('/howToEnterValues');
+	    }
+	    else{
+		session.send("HA! you suck");
+	    }
 	}
+    },
+    function(sess, res){
+	sess.userData.choice2 = res.response.entity;
+	if(sess.userData.choice2 == 'zip (we all know you\'re lazy)' || 'zip'){
+	    sess.beginDialog('/zip');
+	}
+	else if(sess.userData.choice2  == 'city and state' || 'city'){
+	    sess.beginDialog('/getWeatherWithCityState');
+	}
+    },
+    function(sess, res){
+	
+	var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/'+ sess.userData.getState+'/' + sess.userData.getCity + '.json', function(err, response, body){
+	    var h = JSON.parse(body);
+	    
+	    builder.Prompts.text(sess, "The area you selected was " + h.current_observation.display_location.full + " and the temperature is " + h.current_observation.temperature_string + " but it feels more like " + h.current_observation.feelslike_string);
+	});
     }
-
-    // function(session){
-    // 	session.beginDialog('/getWeather');
-    // }
 ]);
 
 // var memeGen = request('https://api.imgflip.com/get_memes', function(err, response, body){
@@ -45,6 +63,25 @@ bot.dialog('/', [
 //     console.log(body);
 // });
 
+bot.dialog('/howToEnterValues',[
+    function(session){
+	builder.Prompts.choice(session, "How do you want to enter your values?", "Zip|City and State");
+    },
+    function(sess, res){
+	sess.userData.choiceFromEnterValues = res.response.entity;
+	sess.endDialogWithResult(res);
+    }
+]);
+
+bot.dialog('/zip',[
+    function(session){
+	builder.Prompts.text(session, "Whats the Zipcode you wanna input?");
+    },
+    function(sess, res){
+	sess.userData.zip = res.response;
+	sess.endDialogWithResult(res);
+    }
+]);
 
 bot.dialog('/give choices',[
     function(session){
@@ -55,39 +92,31 @@ bot.dialog('/give choices',[
     }
 ]);
 
+bot.dialog('/getWeatherWithCityState', [
+    function(session){
+	session.beginDialog('/getState');
+    },
+    function(session,results){
+	session.userData.getState = results.response;
+	session.beginDialog('/getCity');
+    },
+    function(session, results){
+	session.userData.getCity = results.response;
+	session.endDialogWithResults(results);
+	// var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/'+ session.userData.getState+'/' + session.userData.getCity + '.json', function(err, response, body){
+	// 	var h = JSON.parse(body);
+	
+	// builder.Prompts.text(session, "The area you selected was " + h.current_observation.display_location.full + " and the temperature is " + h.current_observation.temperature_string + " but it feels more like " + h.current_observation.feelslike_string);
+	// });
 
-var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/CA/Los_Angeles.json', function(err, response, body){});
-//    var h = JSON.parse(body);
-
-    bot.dialog('/getWeather', [
-	function(session){
-	    session.beginDialog('/getState');
-	},
-	function(session,results){
-	    session.userData.getState = results.response;
-	    session.beginDialog('/getCity');
-	},
-
-	function(session, results){
-	    session.userData.getCity = results.response;
-	    var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/'+ session.userData.getState+'/' + session.userData.getCity + '.json', function(err, response, body){
-		var h = JSON.parse(body);
-		console.log(h);
-		
-	    builder.Prompts.text(session, "The area you selected was " + h.current_observation.display_location.full + " and the temperature is " + h.current_observation.temperature_string + " but it feels more like " + h.current_observation.feelslike_string);
-	    });
-
-    	    // if(results.response.toLowerCase() == 'yes' || results.response.toLowerCase() == 'sure'){
-    	    // 	builder.Prompts.text(session, h.current_observation.temperature_string);
-    	    // }
-    	    // else{
-    	    // 	session.send('Screw you then!');
-    	    // }
-	},
-	function(sess, res){
-	    builder.Prompts.text(sess, 'Want to do another city and state?');
-	}
-    ]);
+    	// if(results.response.toLowerCase() == 'yes' || results.response.toLowerCase() == 'sure'){
+    	// 	builder.Prompts.text(session, h.current_observation.temperature_string);
+    	// }
+    	// else{
+    	// 	session.send('Screw you then!');
+    	// }
+    }
+]);
 
 bot.dialog('/getState',[
     function(session){
