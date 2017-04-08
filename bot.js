@@ -34,28 +34,69 @@ bot.dialog('/', [
     	    session.beginDialog('/howToEnterValues');
     	}
     	else{
-    	    session.send("HA! you suck");
-    	}
-    },
-    
-    function(sess, res){
-    	sess.userData.choice2 = res.response.entity;
-    	if(sess.userData.choice2.toLowerCase() == 'zip'){
-    	    sess.beginDialog('/zip');
-    	}
-    	else if(sess.userData.choice2.toLowerCase()  == 'city and state' || sess.userData.choice2 == 'city'){
-    	    sess.beginDialog('/getWeatherWithCityState');
+	    session.beginDialog('/introToMeme');
     	}
     },
 
+    function(sess, res){
+	if(res.response.entity){
+	    sess.userData.choice2 = res.response.entity;
+    	    if(sess.userData.choice2.toLowerCase() == 'zip'){
+    		sess.beginDialog('/zip');
+    	    }
+    	    else if(sess.userData.choice2.toLowerCase()  == 'city and state' || sess.userData.choice2 == 'city'){
+    		sess.beginDialog('/getWeatherWithCityState');
+    	    }
+	}
+	else{
+	    sess.send("jk no memes here, look in the mirror for a meme");
+	}
+    }
 ]);
 
-// var memeGen = request('https://api.imgflip.com/get_memes', function(err, response, body){
-//     console.log(body);
-// });
 // var memes = request('https://api.imgflip.com/caption_image', function(err, response, body){
 //     console.log(body);
 // });
+bot.dialog('/add text', [
+    function(session){
+	builder.Prompts.text(session, "Do you want to add text to the top, bottom or both?");
+    },
+    function(sess, res){
+	
+    }
+]);
+
+bot.dialog('/introToMeme', [
+    function(session){
+	var memeGen = request('https://api.imgflip.com/get_memes', function(err, response, body){
+	    var temp = JSON.parse(body);
+	    builder.Prompts.text(session, "I got some dank choices for you to make. Check it out: " + temp.data.memes[0].name + ", " + temp.data.memes[1].name + ", " + temp.data.memes[2].name + ", " + temp.data.memes[3].name + ", " + temp.data.memes[5].name + " and many more! just try typing in something and i'll let you know if i got it or not.");
+	});
+    },
+
+    function(sess, req){
+	var memeGen = request('https://api.imgflip.com/get_memes', function(err, response, body){
+	    var temp = JSON.parse(body);
+	    for(i = 0; i < temp.data.memes.length; i++){
+		if(req.response == temp.data.memes[i].name.toLowerCase()){
+		    sess.endDialogWithResult(req);
+		}
+	    }
+	});
+    }
+    // function(sess, res){
+    // 	var memeGen = request('https://api.imgflip.com/get_memes', function(err, response, body){
+    // 	    var temp = JSON.parse(body);
+    // 	    var memeArray = [];
+	    
+    // 	    for(i = 0; i < 5; i++){
+    // 		memeArray.push(temp.data.memes[i].name);
+    // 	    }
+    // 	    builder.Prompts.text(sess, memeArray[0] + " " + memeArray[1]);
+    // 	});
+				
+    // }
+]);
 
 bot.dialog('/howToEnterValues',[
     function(session){
@@ -74,7 +115,7 @@ bot.dialog('/zip',[
     function(sess, res){
 	sess.userData.zip = res.response;
 
-	sess.endDialogWithResult(res);sess.endDialogWithResult(res);sess.endDialogWithResult(res);
+	sess.endDialogWithResult(res);
 
 	var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/'+ sess.userData.zip + '.json', function(err, response, body){
     	    var h = JSON.parse(body);
