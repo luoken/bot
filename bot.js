@@ -12,47 +12,50 @@ bot.dialog('/', [
     function(session){
 	session.beginDialog('/intro');
     },
+
     function(session, results){
 	builder.Prompts.text(session,"Hi "+ results.response + " I was kinda built overnight, wanna see what things I can do?");
     },
+
     function(session, results){
 	session.userData.answer = results.response;
-	console.log(session.userData.answer);
-	if(session.userData.answer == 'sure' || 'yes'){
+
+	if(session.userData.answer == 'sure' || session.userData.answer == 'yes'){
     	    session.beginDialog('/give choices');
     	}
     	else{
 	    session.send("Well what else do you want me to do? I can determine what marvel superhero you can be.... or pokemon maybe?");
     	}
     },
+
     function(session, results){
-	session.userData.choice = results.response.entity;
-	console.log(session.userData.choice);
-	if(results.response){
-	    if(session.userData.choice === 'tell me the weather!' || 'weather'){
-		session.beginDialog('/howToEnterValues');
-	    }
-	    else{
-		session.send("HA! you suck");
-	    }
-	}
+    	session.userData.choice = results.response.entity;
+    	console.log(session.userData.choice);
+
+    	    if(session.userData.choice == 'tell me the weather!' || session.userData.choice == 'weather'){
+    		session.beginDialog('/howToEnterValues');
+    	    }
+    	    else{
+    		session.send("HA! you suck");
+    	    }
     },
+    
     function(sess, res){
-	sess.userData.choice2 = res.response.entity;
-	if(sess.userData.choice2 == 'zip (we all know you\'re lazy)' || 'zip'){
-	    sess.beginDialog('/zip');
-	}
-	else if(sess.userData.choice2  == 'city and state' || 'city'){
-	    sess.beginDialog('/getWeatherWithCityState');
-	}
+    	sess.userData.choice2 = res.response.entity;
+    	if(sess.userData.choice2 == 'zip (we all know you\'re lazy)' || sess.userData.choice2 == 'zip'){
+    	    sess.beginDialog('/zip');
+    	}
+    	else if(sess.userData.choice2  == 'city and state' || sess.userData.choice2 == 'city'){
+    	    sess.beginDialog('/getWeatherWithCityState');
+    	}
     },
     function(sess, res){
 	
-	var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/'+ sess.userData.getState+'/' + sess.userData.getCity + '.json', function(err, response, body){
-	    var h = JSON.parse(body);
+    	var holder = request('http://api.wunderground.com/api/4863d9fbca8e5290/conditions/q/'+ sess.userData.getState+'/' + sess.userData.getCity + '.json', function(err, response, body){
+    	    var h = JSON.parse(body);
 	    
-	    builder.Prompts.text(sess, "The area you selected was " + h.current_observation.display_location.full + " and the temperature is " + h.current_observation.temperature_string + " but it feels more like " + h.current_observation.feelslike_string);
-	});
+    	    builder.Prompts.text(sess, "The area you selected was " + h.current_observation.display_location.full + " and the temperature is " + h.current_observation.temperature_string + " but it feels more like " + h.current_observation.feelslike_string);
+    	});
     }
 ]);
 
